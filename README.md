@@ -1,30 +1,3 @@
-太好啦！既然四个 Page 模板你已经做好，我们现在就进入 **Leader 的下一项关键任务：README.md**。
-
-你的 README 必须：
-
-### ✔ 专业
-
-### ✔ 满足课程要求（Cloud-based system）
-
-### ✔ 老师一打开就看懂
-
-### ✔ 展示 Team Leader 对项目结构的掌控
-
-### ✔ 可直接用于部署（Streamlit Cloud）
-
-我会给你一个 **完整英文版本** 的 README.md，你只需要复制到你的文件中即可。
-
----
-
-# ⭐ **完整 README.md（直接可用）**
-
-请把以下内容 **完全复制** 到你的项目根目录的 `README.md` 文件中。
-
-你可以直接覆盖你现在的 README.md。
-
----
-
-```markdown
 # ✈️ Singapore Airlines Data Analytics System  
 ### CN6001 Enterprise Application & Cloud Computing – Coursework Project  
 **Team Leader: Qian Zhu**
@@ -246,7 +219,3 @@ Commercial use is not permitted.
 ```
 
 ⭐ Thank you for reviewing our project!
-
-```
-
----
