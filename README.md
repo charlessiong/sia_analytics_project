@@ -13,6 +13,7 @@ This project implements a **cloud-based data analytics platform for Singapore Ai
 - **Streamlit Web Framework**
 - **Modular Service Architecture**
 - **Cloud Execution (Streamlit Cloud)**
+- **
 
 
 Because real SIA operational data is confidential, the system uses a synthetic dataset (`train.csv`) to simulate real airline operations and demonstrate the analytics pipeline.
@@ -116,6 +117,38 @@ The application will open automatically in your browser at:
 [http://localhost:8501](http://localhost:8501)
 
 ```
+
+📌 4.1 Optional: Run the Command-Line Interface (CLI)
+
+In addition to the web dashboard, the project also includes a Command-Line Interface (CLI) version for testing and bare-metal execution without a browser.
+
+Run the CLI version:
+python3 main.py cli
+
+
+This will launch the interactive terminal menu:
+
+===========================================
+ Singapore Airlines Analytics System (CLI)
+===========================================
+1. Flight Performance Analytics
+2. Customer Experience Analytics
+3. Risk & Scenario Simulation
+4. Cloud Analytics
+5. Exit
+
+Notes:
+
+The CLI mode is separate from the Streamlit UI
+
+Do not run the app using python3 main.py
+(it will enter Streamlit “bare mode” and will not show the UI)
+
+Use:
+
+streamlit run main.py → Web UI
+
+python3 main.py cli → CLI Menu
 
 ---
 
