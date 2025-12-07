@@ -13,7 +13,7 @@ This project implements a **cloud-based data analytics platform for Singapore Ai
 - **Streamlit Web Framework**
 - **Modular Service Architecture**
 - **Cloud Execution (Streamlit Cloud)**
-- **Crew efficiency evaluation**
+- **Crew Efficiency Evaluation**
 
 Because real SIA operational data is confidential, the system uses a synthetic dataset (`train.csv`) to simulate real airline operations and demonstrate the analytics pipeline.
 
