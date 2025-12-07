@@ -29,7 +29,7 @@ The application provides four key analytics modules:
 - Fuel consumption trend analysis  
 - Operational metrics visualisation  
 - Flight performance indicators  
-- **Crew Efficiency Evaluation**
+- Crew Efficiency Evaluation**
 
 ### **2. Customer Experience Analytics**
 - Rating distribution  
