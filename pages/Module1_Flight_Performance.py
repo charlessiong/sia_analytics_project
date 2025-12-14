@@ -89,4 +89,12 @@ This module analyzes operational performance metrics such as:
 """)
 
 
-
+# -------------------------------
+# BACK NAVIGATION
+# -------------------------------
+st.divider()
+st.page_link(
+    "Dashboard.py",
+    label="⬅️ Back to Dashboard",
+    icon="🏠"
+)
