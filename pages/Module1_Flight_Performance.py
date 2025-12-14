@@ -182,16 +182,6 @@ def run_flight_performance_ui():
 
     st.divider()
 
-    st.markdown(
-        """
-        **Summary**
-
-        - Operational delays and distance trends highlight efficiency patterns  
-        - Fuel consumption is **synthetically estimated** to demonstrate cost analysis  
-        - Crew service ratings reflect human performance factors  
-        """
-    )
-
     st.page_link("Dashboard.py", label="⬅️ Back to Dashboard", icon="🏠")
 
 
