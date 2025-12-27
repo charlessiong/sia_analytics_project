@@ -12,7 +12,11 @@
 
 import numpy as np
 import pandas as pd
-
+from services.ui_service import (
+    apply_global_styles,
+    inject_back_to_home_css,
+    render_back_to_home,
+)
 
 def _safe_apply_global_styles():
     """Apply shared UI theme if available (safe for CLI too)."""
@@ -22,147 +26,7 @@ def _safe_apply_global_styles():
         return True
     except Exception:
         return False
-
-
-def _inject_module_css():
-    """Inject module-specific UI styles using the same palette as ui_service.py."""
-    import streamlit as st
-
-    PRIMARY_NAVY = "#002663"
-    BACKGROUND_CREAM = "#F5F3EE"
-    TEXT_GREY = "#555555"
-    CARD_BG = "#FFFFFF"
-    CARD_BORDER = "#E5E7EB"
-
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{ background-color: {BACKGROUND_CREAM}; }}
-        h1, h2, h3 {{ color: {PRIMARY_NAVY}; }}
-
-        .sia-subtext {{
-            color: {TEXT_GREY};
-            font-size: 1rem;
-            margin-top: -6px;
-        }}
-
-        .kpi-card {{
-            background: {CARD_BG};
-            border: 1px solid {CARD_BORDER};
-            border-radius: 16px;
-            padding: 16px 16px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-            height: 100%;
-        }}
-        .kpi-title {{
-            color: {TEXT_GREY};
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }}
-        .kpi-value {{
-            color: {PRIMARY_NAVY};
-            font-size: 2.2rem;
-            font-weight: 800;
-            line-height: 1;
-        }}
-        .kpi-badge {{
-            display: inline-block;
-            margin-top: 8px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(255, 237, 77, 0.35);
-            color: {PRIMARY_NAVY};
-            font-weight: 700;
-            font-size: 0.78rem;
-        }}
-
-        .section-title {{
-            margin-top: 14px;
-            margin-bottom: 2px;
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: {PRIMARY_NAVY};
-        }}
-
-        .hint {{
-            color: {TEXT_GREY};
-            font-size: 0.92rem;
-        }}
-
-        /* Top-row back link (non-sticky fallback) */
-        .back-row {{
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 6px 0 14px 0;
-            font-size: 1rem;
-        }}
-        .back-row a {{
-            text-decoration: none;
-            font-weight: 700;
-            color: {PRIMARY_NAVY};
-        }}
-        .back-row a:hover {{
-            text-decoration: underline;
-        }}
-
-        /* Sticky floating back button */
-        .sia-back-float {{
-            position: fixed;
-            top: 90px;              /* below Streamlit header */
-            right: 18px;            /* keep it away from sidebar */
-            z-index: 999999;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.94);
-            border: 1px solid rgba(0,0,0,0.10);
-            box-shadow: 0 10px 28px rgba(0,0,0,0.14);
-            backdrop-filter: blur(6px);
-        }}
-        .sia-back-float a {{
-            text-decoration: none;
-            font-weight: 800;
-            color: {PRIMARY_NAVY};
-            font-size: 0.98rem;
-        }}
-        .sia-back-float a:hover {{
-            text-decoration: underline;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def _render_back_links():
-    """Render both a normal top link + a sticky floating link."""
-    import streamlit as st
-
-    # Normal (always visible at the top)
-    st.markdown(
-        """
-        <div class="back-row">
-            🏠 <a href="./" target="_self">Back to Dashboard</a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Sticky (follows as you scroll)
-    st.markdown(
-        """
-        <div class="sia-back-float">
-            🏠 <a href="./" target="_self">Back to Dashboard</a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
+    
 def _kpi_card(st, title: str, value: str, badge: str = ""):
     """Render a KPI card."""
     badge_html = f'<div class="kpi-badge">{badge}</div>' if badge else ""
@@ -232,11 +96,9 @@ def run_streamlit():
     import streamlit as st
     from services.data_service import load_data
 
-    _safe_apply_global_styles()
-    _inject_module_css()
-
-    # This call is what makes the button appear
-    _render_back_links()
+    apply_global_styles()
+    inject_back_to_home_css()
+    render_back_to_home()
 
     st.title("⚠️ Risk & Scenario Simulation")
     st.markdown(
@@ -332,34 +194,29 @@ def run_streamlit():
 def run_cli():
     from services.data_service import load_data
 
-    print("\n--- Risk & Scenario Simulation (CLI) ---")
-
     df = load_data()
 
-    delay_col = _first_existing_col(df, ["Departure Delay in Minutes", "DepartureDelay", "DepDelay"])
+    print("\n=======================================")
+    print(" RISK & SCENARIO SIMULATION (CLI) ")
+    print("=======================================\n")
+
+    delay_col = _first_existing_col(
+        df, ["Departure Delay in Minutes", "DepartureDelay", "DepDelay"]
+    )
+
     if delay_col is None:
-        print("ERROR: Could not find a departure delay column.")
-        return
+        print("Departure Delay Data : Not Available")
+    else:
+        delay_series = pd.to_numeric(df[delay_col], errors="coerce").dropna()
+        mean_delay = float(delay_series.mean())
+        print(f"Avg Departure Delay  : {mean_delay:.2f} min")
 
-    delay_series = pd.to_numeric(df[delay_col], errors="coerce").dropna()
-    mean_delay = float(delay_series.mean())
-    std_delay = float(delay_series.std()) if float(delay_series.std()) > 0 else 10.0
+    print("\nℹ️  Note:")
+    print("Monte Carlo simulation, scenario tuning,")
+    print("and risk distribution analysis are")
+    print("available in the Streamlit UI.")
 
-    sims = 12000
-    threshold = 60
-    crisis_mult = 1.15
-
-    delays = simulate_delay_monte_carlo(mean_delay, std_delay, sims, crisis_mult)
-    kpis = delay_risk_kpis(delays, threshold)
-
-    print(f"Baseline mean delay: {mean_delay:.2f} min | std: {std_delay:.2f} min")
-    print(f"Simulations: {sims} | Crisis multiplier: {crisis_mult:.2f}")
-    print(f"Expected delay: {kpis['expected']:.2f} min")
-    print(f"P(Delay > {threshold} min): {kpis['p_over']:.2f}%")
-    print(f"95th percentile: {kpis['p95']:.2f} min")
-    print(f"99th percentile: {kpis['p99']:.2f} min")
-    print(f"Worst case: {kpis['worst']:.2f} min")
-
+    input("\nPress ENTER to return to main menu...")
 
 def main(mode="streamlit"):
     if mode == "cli":

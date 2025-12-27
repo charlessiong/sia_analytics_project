@@ -46,7 +46,7 @@ def _inject_module_css() -> None:
 
     PRIMARY_NAVY = "#002663"
     BACKGROUND_CREAM = "#F5F3EE"
-    TEXT_GREY = "#555555"
+    TEXT_GREY = "#5E5A5A"
     CARD_BG = "#FFFFFF"
     CARD_BORDER = "#E5E7EB"
 
@@ -106,73 +106,10 @@ def _inject_module_css() -> None:
             font-size: 0.92rem;
         }}
 
-        .back-row {{
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 6px 0 14px 0;
-            font-size: 1rem;
-        }}
-        .back-row a {{
-            text-decoration: none;
-            font-weight: 700;
-            color: {PRIMARY_NAVY};
-        }}
-        .back-row a:hover {{
-            text-decoration: underline;
-        }}
-
-        .sia-back-float {{
-            position: fixed;
-            top: 90px;
-            right: 18px;
-            z-index: 999999;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.94);
-            border: 1px solid rgba(0,0,0,0.10);
-            box-shadow: 0 10px 28px rgba(0,0,0,0.14);
-            backdrop-filter: blur(6px);
-        }}
-        .sia-back-float a {{
-            text-decoration: none;
-            font-weight: 800;
-            color: {PRIMARY_NAVY};
-            font-size: 0.98rem;
-        }}
-        .sia-back-float a:hover {{
-            text-decoration: underline;
-        }}
         </style>
         """,
         unsafe_allow_html=True,
     )
-
-
-def _render_back_links() -> None:
-    import streamlit as st
-
-    st.markdown(
-        """
-        <div class="back-row">
-            🏠 <a href="./" target="_self">Back to Dashboard</a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <div class="sia-back-float">
-            🏠 <a href="./" target="_self">Back to Dashboard</a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
 
 def _kpi_card(st, title: str, value: str, badge: str = "") -> None:
     badge_html = f'<div class="kpi-badge">{badge}</div>' if badge else ""
@@ -301,10 +238,14 @@ def _streaming_simulation(df: pd.DataFrame, window_size: int, steps: int, seed: 
 def run_streamlit() -> None:
     import streamlit as st
     from services.data_service import load_data
+    from services.ui_service import inject_back_to_home_css, render_back_to_home
 
     _safe_apply_global_styles()
     _inject_module_css()
-    _render_back_links()
+
+    inject_back_to_home_css()
+    render_back_to_home()
+
 
     st.title("☁️ Cloud Analytics")
     st.markdown(
@@ -413,39 +354,40 @@ def run_streamlit() -> None:
 def run_cli() -> None:
     from services.data_service import load_data
 
-    print("\n--- Cloud Analytics (CLI) ---")
+    print("\n=======================================")
+    print("        CLOUD ANALYTICS (CLI)")
+    print("=======================================\n")
 
-    t0 = time.perf_counter()
     df = load_data()
-    load_ms = (time.perf_counter() - t0) * 1000.0
 
     total_rows = int(len(df))
     total_cols = int(df.shape[1])
     missing_cells = int(df.isna().sum().sum())
     mem_mb = _bytes_to_mb(_df_memory_bytes(df))
 
-    print(f"Rows: {total_rows:,}")
-    print(f"Columns: {total_cols}")
-    print(f"Missing cells: {missing_cells:,}")
-    print(f"Estimated memory: {mem_mb:.2f} MB")
-    print(f"Load time: {load_ms:.0f} ms")
+    print(f"Records analysed      : {total_rows:,}")
+    print(f"Number of features    : {total_cols}")
+    print(f"Missing data cells    : {missing_cells:,}")
+    print(f"Estimated memory use  : {mem_mb:.2f} MB")
 
-    batch_size = 10000
-    batch_df = _batch_aggregate(df, batch_size=batch_size)
+    # Basic operational KPI
+    delay_col = _first_existing_col(
+        df,
+        ["Departure Delay in Minutes", "DepartureDelay", "DepDelay"]
+    )
 
-    print(f"\nBatch processing (batch_size={batch_size}):")
-    print(f"Total batches: {len(batch_df)}")
-    print(f"Rows processed: {int(batch_df['Rows'].sum()):,}")
+    if delay_col:
+        avg_delay = float(
+            pd.to_numeric(df[delay_col], errors="coerce").mean()
+        )
+        print(f"Average dep. delay    : {avg_delay:.2f} minutes")
 
-    if batch_df["Avg Departure Delay"].notna().any():
-        avg_delay_overall = float(pd.to_numeric(df[_first_existing_col(df, ['Departure Delay in Minutes','DepartureDelay','DepDelay'])], errors="coerce").mean())
-        print(f"Overall avg departure delay: {avg_delay_overall:.2f} min")
+    print("\nℹ️  Note:")
+    print("This CLI provides a high-level overview only.")
+    print("Interactive batch processing, streaming simulation")
+    print("and visual analytics are available in the Streamlit UI.")
 
-    # small streaming summary
-    stream_df = _streaming_simulation(df, window_size=4000, steps=10, seed=2025)
-    if len(stream_df) > 0 and stream_df["Avg Delay"].notna().any():
-        print(f"Streaming avg delay (10 steps): mean={float(stream_df['Avg Delay'].mean()):.2f} min")
-
+    input("\nPress ENTER to return to main menu...")
 
 def main(mode: str = "streamlit") -> None:
     if mode == "cli":

@@ -1,263 +1,234 @@
 # ============================================================
-# Author: Ruitao He
-# Last Updated: 2025-12-10
-# Module 2: Customer Experience Analytics
+# Author: Ruitao He & Qian Zhu
+# Date: 2025-12
+# Module 2: Customer Experience Analytics (Advanced Version)
 # ============================================================
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib as mpl
 import streamlit as st
 
-# ============================================================
-# Global Visual Settings (Singapore Airlines Theme)
-# ============================================================
+from services.data_service import load_data
+from services.ui_service import (
+    apply_global_styles,
+    inject_back_to_home_css,
+    render_back_to_home,
+)
 
-mpl.rcParams["figure.figsize"] = (8, 4)
-mpl.rcParams["figure.dpi"] = 150
 sns.set(style="whitegrid")
 
-SIA_BLUE = "#003A80"
-SIA_GOLD = "#D4A037"
-
-
-def apply_sia_chart_style(ax):
-    """Remove gridlines and apply the clean SIA premium look."""
-
-    # Remove all gridlines
-    ax.grid(False)
-
-    # Clean modern axes
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_color("#BBBBBB")
-    ax.spines["bottom"].set_color("#BBBBBB")
-
-    # Remove tick marks for a cleaner look
-    ax.tick_params(axis="y", length=0)
-    ax.tick_params(axis="x", colors="#333333")
-
-    # Title formatting
-    ax.title.set_fontsize(16)
-    ax.title.set_fontweight("bold")
-
 
 # ============================================================
-# Load Dataset
+# Helpers
 # ============================================================
 
-def load_data():
-    try:
-        df = pd.read_csv("assets/train.csv")
-        df = df.loc[:, ~df.columns.str.contains("unnamed", case=False)]
-        return df
-    except Exception:
-        return None
-
-
-# ============================================================
-# STREAMLIT UI
-# ============================================================
-
-def run_customer_experience_ui():
-
-    from services.ui_service import apply_global_styles
-
-    st.set_page_config(
-        page_title="Customer Experience Analytics",
-        page_icon="😊",
-        layout="wide"
-    )
-
-    apply_global_styles()
-
-    # ------------------------------------------------------------
-    # Page Header
-    # ------------------------------------------------------------
-    st.title("😊 Customer Experience Analytics")
-    st.markdown(
-        """
-        This module explores passenger satisfaction, inflight service ratings,
-        and behavioural patterns across the customer journey.
-        """
-    )
-    st.divider()
-
-    # ------------------------------------------------------------
-    # Load Data
-    # ------------------------------------------------------------
-    df = load_data()
-    if df is None:
-        st.error("❌ Unable to load dataset from assets/train.csv.")
-        st.stop()
-
-    # Standardize satisfaction to numeric score
+def map_satisfaction(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
     df["satisfaction"] = df["satisfaction"].astype(str).str.lower()
-    satisfaction_map = {
+
+    mapping = {
         "very dissatisfied": 1,
         "dissatisfied": 2,
-        "neutral": 3,
         "neutral or dissatisfied": 3,
+        "neutral": 3,
         "neutral or satisfied": 4,
         "satisfied": 4,
         "very satisfied": 5,
     }
 
-    df["satisfaction_score"] = df["satisfaction"].map(satisfaction_map).fillna(3)
+    df["satisfaction_score"] = df["satisfaction"].map(mapping).fillna(3)
+    return df
 
-    # ------------------------------------------------------------
-    # KPI Summary
-    # ------------------------------------------------------------
-    c1, c2 = st.columns(2)
-    c1.metric("⭐ Average Satisfaction Score", f"{df['satisfaction_score'].mean():.2f}")
-    c2.metric("👥 Total Passengers", f"{len(df)}")
 
-    st.divider()
-
-    # ============================================================
-    # Chart 1 — Satisfaction Distribution (Bar Chart)
-    # ============================================================
-
-    st.subheader("📊 Satisfaction Score Distribution")
-
-    score_counts = df["satisfaction_score"].value_counts().sort_index()
-
-    fig1, ax1 = plt.subplots(figsize=(8, 4))
-    sns.barplot(
-        x=score_counts.index,
-        y=score_counts.values,
-        color=SIA_BLUE,
-        ax=ax1
-    )
-
-    ax1.set_xlabel("Satisfaction Score (1–5)")
-    ax1.set_ylabel("Passenger Count")
-    ax1.set_title("Distribution of Satisfaction Scores")
-
-    apply_sia_chart_style(ax1)
-    st.pyplot(fig1)
-    st.divider()
-
-    # ============================================================
-    # Chart 2 — Satisfaction by Flight Distance (Bar Chart)
-    # ============================================================
-
-    st.subheader("🧭 Impact of Flight Distance on Satisfaction")
-
-    min_d = int(df["Flight Distance"].min())
-    max_d = int(df["Flight Distance"].max())
-
-    threshold = st.slider(
-        "Minimum Flight Distance (km)",
-        min_d,
-        max_d,
-        value=min_d + (max_d - min_d) // 3,
-        step=100,
-    )
-
-    filtered = df[df["Flight Distance"] >= threshold]
-    st.write(f"Passengers included: **{len(filtered)}**")
-
-    filtered_counts = filtered["satisfaction_score"].value_counts().sort_index()
-
-    fig2, ax2 = plt.subplots(figsize=(8, 4))
-    sns.barplot(
-        x=filtered_counts.index,
-        y=filtered_counts.values,
-        color=SIA_GOLD,
-        ax=ax2
-    )
-
-    ax2.set_xlabel("Satisfaction Score")
-    ax2.set_ylabel("Passenger Count")
-    ax2.set_title("Satisfaction Levels for Long-Distance Flights")
-
-    apply_sia_chart_style(ax2)
-    st.pyplot(fig2)
-    st.divider()
-
-    # ============================================================
-    # Chart 3 — Average Inflight Service Ratings
-    # ============================================================
-
-    st.subheader("🔥 Average Inflight Service Ratings")
-
-    service_cols = [
-        "Inflight wifi service",
-        "Departure/Arrival time convenient",
-        "Ease of Online booking",
-        "Gate location",
-        "Food and drink",
-        "Online boarding",
-        "Seat comfort",
-        "Inflight entertainment",
-        "On-board service",
-        "Leg room service",
-        "Baggage handling",
-        "Checkin service",
-        "Inflight service",
-        "Cleanliness",
-    ]
-
-    service_scores = df[service_cols].mean().sort_values(ascending=True)
-
-    fig3, ax3 = plt.subplots(figsize=(10, 6))
-    sns.barplot(
-        x=service_scores.values,
-        y=service_scores.index,
-        palette=[SIA_BLUE if i < len(service_scores) / 2 else SIA_GOLD
-                 for i in range(len(service_scores))],
-        ax=ax3,
-    )
-
-    ax3.set_xlabel("Average Rating (1–5)")
-    ax3.set_ylabel("Service Category")
-    ax3.set_title("Passenger Evaluation of Inflight Service Attributes")
-
-    apply_sia_chart_style(ax3)
-    st.pyplot(fig3)
-    st.divider()
-
-    # Back Navigation
-    st.page_link("Dashboard.py", label="⬅️ Back to Dashboard", icon="🏠")
+def distance_bucket(km: float) -> str:
+    if km < 1500:
+        return "Short-haul"
+    elif km < 3500:
+        return "Medium-haul"
+    return "Long-haul"
 
 
 # ============================================================
-# CLI Version
+# Streamlit UI
+# ============================================================
+
+def run_customer_experience_ui():
+
+    st.set_page_config(
+        page_title="Customer Experience Analytics",
+        page_icon="😊",
+        layout="wide",
+    )
+
+    # -------- Global UI & Navigation (CENTRALIZED) --------
+    apply_global_styles()
+    inject_back_to_home_css()
+    render_back_to_home()
+
+    # -----------------------------
+    # Page Header
+    # -----------------------------
+    st.title("😊 Customer Experience Analytics")
+    st.markdown(
+        """
+        This module provides **interactive customer experience analytics**.
+        Users can dynamically segment passengers and explore how service
+        attributes influence overall satisfaction.
+        """
+    )
+    st.divider()
+
+    # -----------------------------
+    # Load & Prepare Data
+    # -----------------------------
+    df = load_data()
+    if df is None or df.empty:
+        st.error("❌ Dataset could not be loaded.")
+        st.stop()
+
+    df = map_satisfaction(df)
+    df["Distance Segment"] = df["Flight Distance"].apply(distance_bucket)
+
+    # -----------------------------
+    # Sidebar Filters
+    # -----------------------------
+    st.sidebar.header("🎛 Customer Segmentation")
+
+    cust_type = st.sidebar.multiselect(
+        "Customer Type",
+        options=sorted(df["Customer Type"].dropna().unique()),
+        default=sorted(df["Customer Type"].dropna().unique()),
+    )
+
+    travel_class = st.sidebar.multiselect(
+        "Class",
+        options=sorted(df["Class"].dropna().unique()),
+        default=sorted(df["Class"].dropna().unique()),
+    )
+
+    distance_seg = st.sidebar.multiselect(
+        "Flight Distance",
+        options=["Short-haul", "Medium-haul", "Long-haul"],
+        default=["Short-haul", "Medium-haul", "Long-haul"],
+    )
+
+    filtered = df[
+        df["Customer Type"].isin(cust_type)
+        & df["Class"].isin(travel_class)
+        & df["Distance Segment"].isin(distance_seg)
+    ]
+
+    # -----------------------------
+    # KPI Summary
+    # -----------------------------
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Passengers", f"{len(filtered)}")
+    c2.metric("Avg Satisfaction", f"{filtered['satisfaction_score'].mean():.2f}")
+    c3.metric(
+        "Satisfaction Rate (%)",
+        f"{(filtered['satisfaction_score'] >= 4).mean() * 100:.1f}",
+    )
+
+    st.divider()
+
+    # -----------------------------
+    # Satisfaction Distribution
+    # -----------------------------
+    st.subheader("📊 Satisfaction Distribution")
+
+    fig1, ax1 = plt.subplots()
+    sns.countplot(
+        x="satisfaction_score",
+        data=filtered,
+        ax=ax1,
+    )
+    ax1.set_xlabel("Satisfaction Score (1–5)")
+    ax1.set_ylabel("Passengers")
+
+    st.pyplot(fig1)
+    st.divider()
+
+    # -----------------------------
+    # Segment Comparison
+    # -----------------------------
+    st.subheader("🧭 Satisfaction by Segment")
+
+    seg_col = st.selectbox(
+        "Compare by",
+        ["Customer Type", "Class", "Distance Segment"],
+    )
+
+    fig2, ax2 = plt.subplots()
+    filtered.groupby(seg_col)["satisfaction_score"].mean().plot(
+        kind="bar",
+        ax=ax2,
+    )
+    ax2.set_ylabel("Average Satisfaction")
+
+    st.pyplot(fig2)
+    st.divider()
+
+    # -----------------------------
+    # Driver Analysis
+    # -----------------------------
+    st.subheader("🔥 Key Satisfaction Drivers")
+
+    service_cols = [
+        "Seat comfort",
+        "Inflight entertainment",
+        "Food and drink",
+        "On-board service",
+        "Cleanliness",
+        "Inflight service",
+        "Checkin service",
+    ]
+
+    available = [c for c in service_cols if c in filtered.columns]
+
+    corr = (
+        filtered[available + ["satisfaction_score"]]
+        .corr()["satisfaction_score"]
+        .drop("satisfaction_score")
+        .sort_values()
+    )
+
+    fig3, ax3 = plt.subplots(figsize=(8, 5))
+    corr.plot(kind="barh", ax=ax3)
+    ax3.set_xlabel("Correlation with Satisfaction")
+
+    st.pyplot(fig3)
+
+
+# ============================================================
+# CLI (Lightweight)
 # ============================================================
 
 def run_customer_experience_cli():
 
+    
+    df = load_data()
+    df = map_satisfaction(df)
+
     print("\n=======================================")
-    print("  CUSTOMER EXPERIENCE ANALYTICS (CLI)  ")
+    print(" CUSTOMER EXPERIENCE ANALYTICS (CLI) ")
     print("=======================================\n")
 
-    df = load_data()
-    if df is None:
-        print("❌ ERROR: Dataset not found.")
-        input("Press ENTER to return...")
-        return
+    print(f"Passengers           : {len(df)}")
+    print(f"Avg Satisfaction     : {df['satisfaction_score'].mean():.2f}")
+    print(
+        f"Satisfaction Rate %  : {(df['satisfaction_score'] >= 4).mean() * 100:.1f}"
+    )
 
-    df["satisfaction"] = df["satisfaction"].astype(str).str.lower()
+    print("\nℹ️  Note:")
+    print("Detailed segmentation and driver analysis")
+    print("are available in the Streamlit UI.")
 
-    mapping = {
-        "neutral or dissatisfied": 0,
-        "satisfied": 1
-    }
-
-    df["satisfaction_score"] = df["satisfaction"].map(mapping).fillna(-1)
-
-    print(f"⭐ Average Satisfaction Score: {df['satisfaction_score'].mean():.2f}\n")
-    print("📊 Satisfaction Distribution:")
-    print(df["satisfaction"].value_counts())
-
-    print("\n✔ Analysis Completed.")
-    input("Press ENTER to return...")
+    input("\nPress ENTER to return to main menu...")
 
 
 # ============================================================
-# Auto-run Streamlit if page is opened directly
+# Auto-run Streamlit
 # ============================================================
 
 try:
