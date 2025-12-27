@@ -14,7 +14,7 @@
 # - Monte Carlo simulation for delay risk modelling
 # - Scenario-based disruption analysis (crisis multiplier)
 # - Synthetic fuel price volatility simulation (GBM-style)
-# - Enterprise-style Streamlit UI + CLI execution
+# - Streamlit UI + CLI execution
 # ============================================================
 
 import numpy as np
@@ -193,9 +193,37 @@ def run_streamlit():
     _safe_apply_global_styles()
     _inject_module_css()
 
-    # Back navigation (matches Module 1 & 2 style)
-    # Note: st.page_link is supported in modern Streamlit versions.
-    st.page_link("Dashboard.py", label="Back to Dashboard", icon="🏠")
+    # ------------------------------------------------------------
+    # Back navigation row (matches Module 1 & 2 style, version-safe)
+    # ------------------------------------------------------------
+    st.markdown(
+        """
+        <style>
+          .back-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0 14px 0;
+            font-size: 18px;
+            font-weight: 600;
+          }
+          .back-row a {
+            text-decoration: none;
+            color: #6b7280;   /* subtle grey */
+          }
+          .back-row a:hover {
+            text-decoration: underline;
+          }
+        </style>
+
+        <div class="back-row">
+          <span style="font-size:22px;">🏠</span>
+          <span style="font-size:22px;">⬅️</span>
+          <a href="/" target="_self">Back to Dashboard</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.title("⚠️ Singapore Airlines – Monte Carlo Risk & Scenario Simulation")
     st.markdown(
@@ -250,6 +278,7 @@ def run_streamlit():
     with c3:
         crisis_mult = st.slider("Crisis multiplier", 1.0, 2.5, 1.15, step=0.05)
 
+    # Run immediately so the page is never blank
     delays = simulate_delay_monte_carlo(mean_delay, std_delay, sims, crisis_mult)
     kpis = delay_risk_kpis(delays, threshold)
 
