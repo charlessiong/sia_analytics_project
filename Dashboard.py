@@ -482,8 +482,20 @@ def run_streamlit_ui():
 # CLI MODE
 # =============================================================
 def run_cli():
+    """
+    CLI entry point for Singapore Airlines Analytics System.
+
+    This function provides a menu-driven interface for quick
+    summaries of analytics modules. It also serves as a
+    demonstration of command-line interface design.
+
+    :return: None
+    """
     from pages.Module1_Flight_Performance import run_flight_performance_cli
     from pages.Module2_Customer_Experience import run_customer_experience_cli
+    from pages.Module3_Risk_Simulation import run_risk_simulation_cli
+    from pages.Module4_Cloud_Analytics import run_cloud_analytics_cli
+
 
     print("===========================================")
     print("   Singapore Airlines Analytics System CLI")
@@ -499,21 +511,30 @@ def run_cli():
         choice = input("Enter option (1–5): ").strip()
 
         if choice == "1":
+            """
+            Run Flight Performance Analytics module in CLI mode.
+            """
             run_flight_performance_cli()
         elif choice == "2":
+            """
+            Run Customer Experience Analytics module in CLI mode.
+            """
             run_customer_experience_cli()
         elif choice == "3":
-            print("\n[CLI] Risk Simulation module is visualization-focused.")
-            print("Please use Streamlit UI for full functionality.")
-            input("\nPress ENTER to return to menu...")
+            """
+            Run Risk & Scenario Simulation module in CLI mode.
+            """
+            run_risk_simulation_cli()
         elif choice == "4":
-            print("\n[CLI] Cloud Analytics module demonstrates cloud execution.")
-            print("Please use Streamlit UI for full functionality.")
-            input("\nPress ENTER to return to menu...")
+            """
+            Run Cloud Analytics module in CLI mode.
+            """
+            run_cloud_analytics_cli()
         elif choice == "5":
             print("Goodbye.")
             break
         else:
+            print("Invalid option.")
             print("❌ Invalid option.")
             input("Press ENTER to continue...")
 

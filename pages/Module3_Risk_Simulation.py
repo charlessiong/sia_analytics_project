@@ -361,26 +361,38 @@ def run_streamlit():
     st.line_chart(trend)
 
 
-def run_cli():
+# ============================================================
+# CLI VERSION
+# ============================================================
+def run_risk_simulation_cli():
+    """Command-line interface for Risk & Scenario Simulation (summary only)."""
+
     from services.data_service import load_data
 
-    print("\n--- Risk & Scenario Simulation (CLI) ---")
+    print("\n=======================================")
+    print("  RISK & SCENARIO SIMULATION (CLI)     ")
+    print("=======================================\n")
 
     df = load_data()
 
-    delay_col = _first_existing_col(df, ["Departure Delay in Minutes", "DepartureDelay", "DepDelay"])
+    delay_col = _first_existing_col(
+        df, ["Departure Delay in Minutes", "DepartureDelay", "DepDelay"]
+    )
     if delay_col is None:
-        print("ERROR: Could not find a departure delay column.")
+        print("❌ ERROR: Could not find a departure delay column.")
+        input("Press ENTER to return...")
         return
 
     delay_series = pd.to_numeric(df[delay_col], errors="coerce").dropna()
     if delay_series.empty:
-        print("ERROR: Delay column exists but has no numeric values.")
+        print("❌ ERROR: Delay column exists but has no numeric values.")
+        input("Press ENTER to return...")
         return
 
     mean_delay = float(delay_series.mean())
-    std_delay = float(delay_series.std()) if float(delay_series.std()) > 0 else 10.0
+    std_delay = float(delay_series.std()) if delay_series.std() > 0 else 10.0
 
+    # Fixed CLI assumptions (documented)
     sims = 12000
     threshold = 60
     crisis_mult = 1.15
@@ -388,21 +400,35 @@ def run_cli():
     delays = simulate_delay_monte_carlo(mean_delay, std_delay, sims, crisis_mult)
     kpis = delay_risk_kpis(delays, threshold)
 
-    print(f"Baseline mean delay: {mean_delay:.2f} min | std: {std_delay:.2f} min")
-    print(f"Simulations: {sims} | Crisis multiplier: {crisis_mult:.2f}")
-    print(f"Expected delay: {kpis['expected']:.2f} min")
-    print(f"P(Delay > {threshold} min): {kpis['p_over']:.2f}%")
-    print(f"95th percentile: {kpis['p95']:.2f} min")
-    print(f"99th percentile: {kpis['p99']:.2f} min")
-    print(f"Worst case: {kpis['worst']:.2f} min")
+    print(f"Baseline mean delay      : {mean_delay:.2f} min")
+    print(f"Delay standard deviation : {std_delay:.2f} min")
+    print(f"Simulations              : {sims}")
+    print(f"Crisis multiplier        : {crisis_mult:.2f}\n")
+
+    print("📊 Risk Indicators")
+    print(f" - Expected delay        : {kpis['expected']:.2f} min")
+    print(f" - P(Delay > {threshold} min) : {kpis['p_over']:.2f}%")
+    print(f" - 95th percentile       : {kpis['p95']:.2f} min")
+    print(f" - 99th percentile       : {kpis['p99']:.2f} min")
+    print(f" - Worst case            : {kpis['worst']:.2f} min")
+
+    print("\n✔ Risk Simulation CLI completed.")
+    input("\nPress ENTER to return to main menu...")
 
 
 def main(mode="streamlit"):
     if mode == "cli":
-        run_cli()
+        run_risk_simulation_cli()
     else:
         run_streamlit()
 
 
-if __name__ == "__main__":
-    main()
+# ============================================================
+# AUTO-RUN STREAMLIT WHEN OPENED AS PAGE
+# ============================================================
+try:
+    import streamlit as st
+    if st.runtime.exists():
+        run_streamlit()
+except Exception:
+    pass

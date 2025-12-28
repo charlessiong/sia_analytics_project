@@ -390,11 +390,22 @@ def run_streamlit() -> None:
 # -----------------------------
 # CLI
 # -----------------------------
-def run_cli() -> None:
+# ============================================================
+# CLI VERSION
+# ============================================================
+def run_cloud_analytics_cli():
+    """Command-line interface for Cloud Analytics (summary only)."""
+
     from services.data_service import load_data
+    import time
 
-    print("\n--- Cloud Analytics (CLI) ---")
+    print("\n=======================================")
+    print("        CLOUD ANALYTICS (CLI)          ")
+    print("=======================================\n")
 
+    # -----------------------------
+    # Data Ingestion
+    # -----------------------------
     t0 = time.perf_counter()
     df = load_data()
     load_ms = (time.perf_counter() - t0) * 1000.0
@@ -404,35 +415,62 @@ def run_cli() -> None:
     missing_cells = int(df.isna().sum().sum())
     mem_mb = _bytes_to_mb(_df_memory_bytes(df))
 
-    print(f"Rows: {total_rows:,}")
-    print(f"Columns: {total_cols}")
-    print(f"Missing cells: {missing_cells:,}")
-    print(f"Estimated memory: {mem_mb:.2f} MB")
-    print(f"Load time: {load_ms:.0f} ms")
+    print("📥 Data Ingestion Summary")
+    print(f" - Rows loaded      : {total_rows:,}")
+    print(f" - Columns          : {total_cols}")
+    print(f" - Missing cells    : {missing_cells:,}")
+    print(f" - Estimated memory : {mem_mb:.2f} MB")
+    print(f" - Load time        : {load_ms:.0f} ms\n")
 
+    # -----------------------------
+    # Batch Processing
+    # -----------------------------
     batch_size = 10000
     batch_df = _batch_aggregate(df, batch_size=batch_size)
 
-    print(f"\nBatch processing (batch_size={batch_size}):")
-    print(f"Total batches: {len(batch_df)}")
-    print(f"Rows processed: {int(batch_df['Rows'].sum()):,}")
+    print("🧱 Batch Processing")
+    print(f" - Batch size       : {batch_size}")
+    print(f" - Total batches    : {len(batch_df)}")
+    print(f" - Rows processed   : {int(batch_df['Rows'].sum()):,}")
 
-    delay_col = _first_existing_col(df, ["Departure Delay in Minutes", "DepartureDelay", "DepDelay"])
+    delay_col = _first_existing_col(
+        df, ["Departure Delay in Minutes", "DepartureDelay", "DepDelay"]
+    )
     if delay_col and batch_df["Avg Departure Delay"].notna().any():
         avg_delay_overall = float(pd.to_numeric(df[delay_col], errors="coerce").mean())
-        print(f"Overall avg departure delay: {avg_delay_overall:.2f} min")
+        print(f" - Avg delay        : {avg_delay_overall:.2f} min")
 
-    stream_df = _streaming_simulation(df, window_size=4000, steps=10, seed=2025)
-    if len(stream_df) > 0 and stream_df["Avg Delay"].notna().any():
-        print(f"Streaming avg delay (10 steps): mean={float(stream_df['Avg Delay'].mean()):.2f} min")
+    print()
 
+    # -----------------------------
+    # Streaming Simulation
+    # -----------------------------
+    print("📡 Streaming Simulation (Summary)")
+    stream_df = _streaming_simulation(
+        df, window_size=4000, steps=10, seed=2025
+    )
+
+    if not stream_df.empty and stream_df["Avg Delay"].notna().any():
+        print(f" - Steps simulated  : {len(stream_df)}")
+        print(f" - Mean delay       : {float(stream_df['Avg Delay'].mean()):.2f} min")
+    else:
+        print(" - No valid delay data for streaming simulation.")
+
+    print("\n✔ Cloud Analytics CLI completed.")
+    input("\nPress ENTER to return to main menu...")
 
 def main(mode: str = "streamlit") -> None:
     if mode == "cli":
-        run_cli()
+        run_cloud_analytics_cli()
     else:
         run_streamlit()
 
-
-if __name__ == "__main__":
-    main()
+# ============================================================
+# AUTO-RUN STREAMLIT WHEN OPENED AS PAGE
+# ============================================================
+try:
+    import streamlit as st
+    if st.runtime.exists():
+        run_streamlit()
+except Exception:
+    pass
