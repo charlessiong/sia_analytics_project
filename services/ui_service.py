@@ -139,10 +139,11 @@ p, li {{
 /* ===============================
    Sidebar
    =============================== */
-section[data-testid="stSidebar"] {{
+section[data-testid="stSidebar"] {
     background-color: {PRIMARY_NAVY} !important;
     border-right: 1px solid {CARD_BORDER};
 }}
+
 
 /* ===============================
    KPI Cards (Module 3 / 4)
